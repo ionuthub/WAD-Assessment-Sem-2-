@@ -1,0 +1,203 @@
+/* ---- Global Styles ---- */
+:root {
+  --primary: #2a9d8f;
+  --primary-dark: #1e7d72;
+  --bg: #f5f5f5;
+  --text: #222;
+  --header-height: 70px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  padding-top: var(--header-height);
+}
+
+/* ---- Header / Navbar ---- */
+
+/* Logo link */
+.logo {
+  color: #000; /* black for maximum readability */
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.logo:hover {
+  color: #333;
+}
+
+.navbar {
+  width: 100vw;
+  min-width: 100%;
+  box-sizing: border-box;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.8rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: var(--header-height);
+  z-index: 2000;
+}
+.logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.nav-actions a {
+  text-decoration: none;
+  color: #e0f8f7;
+  transition: color 0.15s;
+}
+
+button {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+}
+.leaflet-control,
+.leaflet-control-zoom,
+.leaflet-top,
+.leaflet-bar {
+  z-index: 400 !important;
+  z-index: 400 !important; /* below navbar (1000) */
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+button:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+}
+
+.card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 1rem;
+}
+
+input, textarea, select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* ---- Toolbar under map ---- */
+.toolbar {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.error {
+  color: #c00;
+  padding: 0.5rem 1rem;
+}
+
+/* Map container fills viewport minus header */
+.map-wrapper {
+  height: calc(100vh - var(--header-height) - 60px);
+  width: 100%;
+}
+
+/* ---- Generic Page Container ---- */
+.page-container {
+  max-width: 800px;
+  margin: 1rem auto;
+  padding: 0 1rem;
+}
+
+.page-container h2 {
+  margin-bottom: 1rem;
+}
+
+.page-container form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.page-container form input,
+.page-container form textarea,
+.page-container form select {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* ---- Responsive (≤600px) ---- */
+@media (max-width: 600px) {
+  /* Navbar actions stack */
+  .nav-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  /* Card/form fills width */
+  .page-container {
+    padding: 0 0.5rem;
+  }
+  .page-container form.card {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  /* Toolbar vertical */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Map full width */
+  #map,
+  .map-wrapper {
+    width: 100% !important;
+    height: 300px !important;
+  }
+}
+
