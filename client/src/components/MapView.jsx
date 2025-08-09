@@ -71,7 +71,7 @@ export default function MapView() {
     fetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resourceId: id, content })
+      body: JSON.stringify({ resource_id: id, review: content })
     }).then(r => {
       if (!r.ok) throw new Error('Server error');
       e.target.review.value = '';

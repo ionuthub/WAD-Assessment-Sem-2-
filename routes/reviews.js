@@ -6,6 +6,6 @@ import requireAuth from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/:id', reviewsController.list);
-router.post('/', createReviewValidation, reviewsController.create);
+router.post('/', requireAuth, createReviewValidation, reviewsController.create);
 
 export default router;
