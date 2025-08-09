@@ -72,8 +72,8 @@ export default function AuthBar() {
             value={form.password}
             onChange={handleChange}
           />
-          <button onClick={() => submit('login')}>Login</button>
-          <button onClick={() => setSignup(!signup)}>Sign up</button>
+          <button className="btn-login" onClick={() => submit('login')}>Login</button>
+          <button className="btn-secondary" onClick={() => setSignup(!signup)}>Sign up</button>
           {signup && <button onClick={() => submit('signup')}>Confirm signup</button>}
           <span style={{ color: 'red' }}>{msg}</span>
         </div>
