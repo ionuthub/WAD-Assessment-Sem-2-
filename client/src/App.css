@@ -84,12 +84,12 @@ button {
   transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
 }
 
-/* Login button uses the darker (hover) shade by default */
+/* Login/Logout buttons: precise darker teal */
 .btn-login {
-  background: var(--primary-dark);
+  background: #17665f;
 }
 .btn-login:hover:not(:disabled) {
-  background: #0f4944; /* even darker on hover for clear feedback */
+  background: #12514c; /* slightly darker on hover */
 }
 
 /* Secondary button with white outline for readability on dark navbar */

@@ -55,7 +55,7 @@ export default function AuthBar() {
           <span>|</span>
           <Link to="/add">Add Resource</Link>
           <span>|</span>
-          <button onClick={logout}>Logout</button>
+          <button className="btn-login" onClick={logout}>Logout</button>
         </div>
       ) : (
         <div className="nav-actions">
