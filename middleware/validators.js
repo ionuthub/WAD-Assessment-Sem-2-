@@ -6,7 +6,7 @@ import { body, param, validationResult } from 'express-validator';
 export const createResourceValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('category').trim().notEmpty().withMessage('Category is required'),
-  body('country').trim().notEmpty().withMessage('Country is required'),
+  body('country').trim().optional(),
   body('region').trim().notEmpty().withMessage('Region is required'),
   body('description').trim().notEmpty().withMessage('Description is required'),
   body('lat').isFloat({ min: -90, max: 90 }).withMessage('Latitude must be valid'),

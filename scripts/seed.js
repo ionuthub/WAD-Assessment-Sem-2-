@@ -5,6 +5,17 @@ import db from '../db/db.js';
 
 console.log('Seeding database...');
 
+try {
+  db.exec(`ALTER TABLE healthcare_resources RENAME COLUMN recommendations TO likes;`);
+  console.log('Column "recommendations" renamed to "likes"');
+} catch (err) {
+  if (err.message.includes('no such column')) {
+    // ignore if column doesn't exist
+  } else {
+    throw err;
+  }
+}
+
 db.exec(`
   PRAGMA foreign_keys = ON;
 
@@ -15,7 +26,7 @@ db.exec(`
 
   -- HEALTHCARE RESOURCES
   INSERT OR IGNORE INTO healthcare_resources
-    (name, category, country, description, region, lat, lon, recommendations)
+    (name, category, country, description, region, lat, lon, likes)
   VALUES
     ('Smile Dental Care', 'Dentist', 'UK',
      'Full-service dental office.', 'Manchester', 53.4808, -2.2426, 8),

@@ -10,45 +10,30 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadow });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-export default function MapView() {
+export default function MapView({ user }) {
   const [resources, setResources] = useState([]);
   const [region, setRegion] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const [reviewsById, setReviewsById] = useState({});
+  const [newReview, setNewReview] = useState('');
 
-  useEffect(() => {
+  const fetchResources = () => {
     const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
     fetch(url)
-      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(r => (r.ok ? r.json() : Promise.reject(r.statusText)))
       .then(setResources)
       .catch(setError);
+  };
+
+  useEffect(() => {
+    fetchResources();
   }, [region]);
 
-  // fetch reviews for all resources whenever the list updates
-  useEffect(() => {
-    if (resources.length === 0) return;
-    Promise.all(
-      resources.map(r =>
-        fetch(`/api/reviews/${r.id}`)
-          .then(res => (res.ok ? res.json() : []))
-          .then(data => ({ id: r.id, reviews: data }))
-          .catch(() => ({ id: r.id, reviews: [] }))
-      )
-    ).then(all => {
-      const map = {};
-      all.forEach(({ id, reviews }) => {
-        map[id] = reviews;
-      });
-      setReviewsById(prev => ({ ...prev, ...map }));
-    });
-  }, [resources]);
-
-  function handleRecommend(id) {
-    fetch(`/api/resources/${id}/recommend`, { method: 'POST' })
+  function handleLike(id) {
+    fetch(`/api/resources/${id}/like`, { method: 'POST' })
       .then(r => {
-        if (!r.ok) throw new Error('Error recommending');
+        if (!r.ok) throw new Error('Error liking resource');
         const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
         return fetch(url);
       })
@@ -57,31 +42,29 @@ export default function MapView() {
       .catch(console.error);
   }
 
-  function loadReviews(id) {
-    fetch(`/api/reviews/${id}`)
-      .then(r => (r.ok ? r.json() : Promise.reject('Error fetching reviews')))
-      .then(data => setReviewsById(prev => ({ ...prev, [id]: data })))
-      .catch(console.error);
-  }
+  
+
+  const submitReview = async (resource_id, review) => {
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resource_id, review })
+    });
+    if (res.ok) {
+      setNewReview('');
+      fetchResources();
+    } else {
+      const errorData = await res.json();
+      setError(errorData.error || 'Failed to submit review');
+    }
+  };
 
   function handleReview(e, id) {
     e.preventDefault();
     const content = e.target.review.value.trim();
     if (!content) return;
-    fetch('/api/reviews', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resourceId: id, content })
-    }).then(r => {
-      if (!r.ok) throw new Error('Server error');
-      e.target.review.value = '';
-      // update UI immediately
-      setReviewsById(prev => ({
-        ...prev,
-        [id]: [{ id: Date.now(), review: content }, ...(prev[id] || [])]
-      }));
-      alert('Review added');
-    }).catch(err => alert(err.message));
+    submitReview(id, content);
+    e.target.review.value = '';
   }
 
   return (
@@ -90,8 +73,9 @@ export default function MapView() {
       <div className="toolbar" style={{padding:'0.75rem'}}>
         Region: <input value={region} onChange={e => setRegion(e.target.value)} />{' '}
         <button onClick={() => setRegion(region.trim())}>Search</button>{' '}
-        <button onClick={() => navigate('/add')}>Add Resource</button>
+        {user && <button onClick={() => navigate('/add')}>Add Resource</button>}
       </div>
+      {user && <div className="login-status" style={{padding: '0 0.75rem 0.75rem'}}>Logged in as {user.username}</div>}
       <div className="main-content">
         <div className="map-panel">
           <MapContainer center={[51.505, -0.09]} zoom={5} style={{ height: '500px', width: '100%' }}>
@@ -102,18 +86,18 @@ export default function MapView() {
             />
             {resources.map(r => (
               <Marker key={r.id} position={[r.lat, r.lon]}>
-                <Popup onOpen={() => loadReviews(r.id)}>
+                <Popup>
                   <strong>{r.name}</strong>
                   <p>{r.description}</p>
                   <p>{r.region}, {r.country}</p>
-                  <p>Recommendations: {r.recommendations}</p>
-                  <button onClick={() => handleRecommend(r.id)}>Recommend</button>
+                  <p>Likes: {r.likes}</p>
+                  <button onClick={() => handleLike(r.id)}>Like</button>
                   <form onSubmit={e => handleReview(e, r.id)} style={{ marginTop: '0.5rem' }}>
                     <input name="review" placeholder="Write review" />{' '}
                     <button type="submit">Add</button>
                   </form>
                     <ul style={{marginTop:'0.5rem', paddingLeft:'1rem'}}>
-                      {(reviewsById[r.id] || []).map((rv, i) => (
+                      {r.reviews.map((rv, i) => (
                         <li key={rv.id || i}>{rv.review}</li>
                       ))}
                     </ul>
@@ -133,11 +117,11 @@ export default function MapView() {
               <div key={r.id} className="resource-card" onClick={() => setRegion(r.region)}>
                 <strong>{r.name}</strong> <span className="category">{r.category}</span>
                 <p className="desc">{r.description}</p>
-                <p className="recommends">Recommendations: {r.recommendations}</p>
-                <button className="recommend-btn" onClick={() => handleRecommend(r.id)}>Recommend</button>
-                {reviewsById[r.id] && reviewsById[r.id].length > 0 && (
+                <p className="recommends">Likes: {r.likes}</p>
+                <button className="recommend-btn" onClick={() => handleLike(r.id)}>Like</button>
+                {r.reviews && r.reviews.length > 0 && (
                   <ul className="reviews-list" style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                    {reviewsById[r.id].map((rv, i) => (
+                    {r.reviews.map((rv, i) => (
                       <li key={rv.id || i}>{rv.review}</li>
                     ))}
                   </ul>

@@ -8,7 +8,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadow });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-export default function AddResource() {
+export default function AddResource({ user }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
@@ -19,7 +19,7 @@ export default function AddResource() {
     lat: 51.505,
     lon: -0.09
   });
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
 
@@ -33,7 +33,7 @@ export default function AddResource() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError(null);
+    setErrors({});
     setSubmitting(true);
     try {
       const res = await fetch('/api/resources', {
@@ -41,33 +41,47 @@ export default function AddResource() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Server error');
+        if (data.errors) {
+          const newErrors = {};
+          data.errors.forEach(err => { newErrors[err.path] = err.msg; });
+          setErrors(newErrors);
+        } else {
+          setErrors({ form: data.error || 'Server error' });
+        }
+        return;
       }
       setSuccess('✔ Resource added successfully');
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
-      setError(`✖ ${err.message}`);
+      setErrors({ form: `✖ An unexpected error occurred.` });
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (!user) {
+    return <div className="page-container"><p>Please log in to add a resource.</p></div>;
+  }
+
   return (
     <div className="page-container">
       <h2>Add Healthcare Resource</h2>
-      {error && <div style={{ background: '#ffe6e6', color: '#c00', padding: '0.5rem', marginBottom: '0.5rem' }}>{error}</div>}
+      {errors.form && <div style={{ background: '#ffe6e6', color: '#c00', padding: '0.5rem', marginBottom: '0.5rem' }}>{errors.form}</div>}
       {success && <div style={{ background: '#e6ffea', color: '#007a1f', padding: '0.5rem', marginBottom: '0.5rem' }}>{success}</div>}
       <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 500, margin: 'auto' }}>
         <label>Name<br />
           <input name="name" value={form.name} onChange={updateField} required />
+          {errors.name && <span className="error-text">{errors.name}</span>}
         </label><br />
         <label>Description<br />
           <textarea name="description" value={form.description} onChange={updateField} required />
+          {errors.description && <span className="error-text">{errors.description}</span>}
         </label><br />
         <label>Category<br />
           <select name="category" value={form.category} onChange={updateField} required>
+            {errors.category && <span className="error-text">{errors.category}</span>}
             <option value="">Select category</option>
             <option value="Clinic">Clinic</option>
             <option value="Dentist">Dentist</option>
@@ -79,11 +93,14 @@ export default function AddResource() {
         </label><br />
         <label>Region<br />
           <input name="region" value={form.region} onChange={updateField} />
+          {errors.region && <span className="error-text">{errors.region}</span>}
         </label><br />
         <label>Country<br />
           <input name="country" value={form.country} onChange={updateField} />
         </label><br />
         <p>Pick location (click map): lat {form.lat.toFixed(4)}, lon {form.lon.toFixed(4)}</p>
+        {errors.lat && <span className="error-text">{errors.lat}</span>}
+        {errors.lon && <span className="error-text">{errors.lon}</span>}
         <button type="submit" disabled={submitting}>{submitting ? 'Adding…' : 'Add Resource'}</button>
       </form>
       <div id="map" style={{ height: '300px', margin: '1rem auto', width: '90%', maxWidth: '600px' }}>

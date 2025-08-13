@@ -4,6 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "prestart": "kill $(lsof -t -i:3001) || true",
     "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

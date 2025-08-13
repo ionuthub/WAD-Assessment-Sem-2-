@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function AuthBar() {
-  const [user, setUser] = useState(null);
+export default function AuthBar({ user, setUser }) {
   const [form, setForm] = useState({ username: '', password: '' });
   const [signup, setSignup] = useState(false);
   const [msg, setMsg] = useState('');
-
-  useEffect(() => {
-    fetch('/api/users/me')
-      .then(r => (r.status === 204 ? null : r.json()))
-      .then(data => {
-        if (data && data.user) setUser(data.user);
-      })
-      .catch(() => {});
-  }, []);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });

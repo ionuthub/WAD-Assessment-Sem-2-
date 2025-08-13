@@ -22,11 +22,11 @@ export function create(req, res, next) {
   }
 }
 
-export function recommend(req, res, next) {
+export function like(req, res, next) {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
-    const resource = resourcesDao.incrementRecommendation(id);
+    const resource = resourcesDao.incrementLikes(id);
     if (!resource) return res.status(404).json({ error: 'Not found' });
     res.json(resource);
   } catch (err) {
