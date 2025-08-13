@@ -19,13 +19,3 @@ export function create(req, res, next) {
     next(err);
   }
 }
-
-export function list(req, res, next) {
-  try {
-    const { id } = req.params;
-    const reviews = reviewsDao.list(id);
-    res.json(reviews);
-  } catch (err) {
-    next(err);
-  }
-}
