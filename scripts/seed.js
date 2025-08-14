@@ -6,11 +6,11 @@ import db from '../db/db.js';
 console.log('Seeding database...');
 
 try {
-  db.exec(`ALTER TABLE healthcare_resources RENAME COLUMN recommendations TO likes;`);
-  console.log('Column "recommendations" renamed to "likes"');
+  db.exec(`ALTER TABLE healthcare_resources RENAME COLUMN likes TO recommendations;`);
+  console.log('Column "likes" renamed to "recommendations"');
 } catch (err) {
-  if (err.message.includes('no such column')) {
-    // ignore if column doesn't exist
+  if (err.message.includes('no such column') || err.message.includes('duplicate column name')) {
+    // ignore if column doesn't exist or already migrated
   } else {
     throw err;
   }
@@ -26,7 +26,7 @@ db.exec(`
 
   -- HEALTHCARE RESOURCES
   INSERT OR IGNORE INTO healthcare_resources
-    (name, category, country, description, region, lat, lon, likes)
+    (name, category, country, description, region, lat, lon, recommendations)
   VALUES
     ('Smile Dental Care', 'Dentist', 'UK',
      'Full-service dental office.', 'Manchester', 53.4808, -2.2426, 8),

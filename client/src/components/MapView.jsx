@@ -28,10 +28,10 @@ export default function MapView({ user }) {
     fetchResources();
   }, [region]);
 
-  function handleLike(id) {
-    fetch(`/api/resources/${id}/like`, { method: 'POST' })
+  function handleRecommend(id) {
+    fetch(`/api/resources/${id}/recommend`, { method: 'POST' })
       .then(r => {
-        if (!r.ok) throw new Error('Error liking resource');
+        if (!r.ok) throw new Error('Error recommending resource');
         const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
         return fetch(url);
       })
@@ -87,8 +87,8 @@ export default function MapView({ user }) {
                   <strong>{r.name}</strong>
                   <p>{r.description}</p>
                   <p>{r.region}, {r.country}</p>
-                  <p>Likes: {r.likes}</p>
-                  <button onClick={() => handleLike(r.id)}>Like</button>
+                  <p>Recommendations: {r.recommendations}</p>
+                  <button onClick={() => handleRecommend(r.id)}>Recommend</button>
                   <form onSubmit={e => handleReview(e, r.id)} style={{ marginTop: '0.5rem' }}>
                     <input name="review" placeholder="Write review" />{' '}
                     <button type="submit">Add</button>
@@ -114,8 +114,8 @@ export default function MapView({ user }) {
               <div key={r.id} className="resource-card" onClick={() => setRegion(r.region)}>
                 <strong>{r.name}</strong> <span className="category">{r.category}</span>
                 <p className="desc">{r.description}</p>
-                <p>Likes: {r.likes}</p>
-                <button className="recommend-btn" onClick={() => handleLike(r.id)}>Like</button>
+                <p>Recommendations: {r.recommendations}</p>
+                <button className="recommend-btn" onClick={() => handleRecommend(r.id)}>Recommend</button>
                 {r.reviews && r.reviews.length > 0 && (
                   <ul className="reviews-list" style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
                     {r.reviews.map((rv, i) => (

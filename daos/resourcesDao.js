@@ -13,10 +13,18 @@ export function getAll(region) {
   `;
 
   const processResults = (resources) =>
-    resources.map(r => ({
-      ...r,
-      reviews: r.reviews_concat ? r.reviews_concat.split('|||').map(review => ({ review })) : []
-    }));
+    resources.map(r => {
+      const rec = r.recommendations ?? r.likes ?? 0;
+      const { reviews_concat, ...rest } = r;
+      const out = {
+        ...rest,
+        recommendations: rec,
+        reviews: reviews_concat ? reviews_concat.split('|||').map(review => ({ review })) : []
+      };
+      // Remove legacy key if present to avoid confusion
+      if ('likes' in out) delete out.likes;
+      return out;
+    });
 
   if (region) {
     const stmt = db.prepare(`${query} WHERE hr.region LIKE ? COLLATE NOCASE`);
@@ -35,9 +43,24 @@ export function create(resource) {
   return db.prepare('SELECT * FROM healthcare_resources WHERE id = ?').get(info.lastInsertRowid);
 }
 
-export function incrementLikes(id) {
-  const update = db.prepare('UPDATE healthcare_resources SET likes = likes + 1 WHERE id = ?');
-  const info = update.run(id);
-  if (info.changes === 0) return null;
-  return db.prepare('SELECT * FROM healthcare_resources WHERE id = ?').get(id);
+export function incrementRecommendations(id) {
+  try {
+    const update = db.prepare('UPDATE healthcare_resources SET recommendations = COALESCE(recommendations, 0) + 1 WHERE id = ?');
+    const info = update.run(id);
+    if (info.changes === 0) return null;
+    return db.prepare('SELECT * FROM healthcare_resources WHERE id = ?').get(id);
+  } catch (err) {
+    // Auto-migrate legacy column name 'likes' -> 'recommendations'
+    if (String(err.message || '').includes('no such column: recommendations')) {
+      try {
+        db.exec('ALTER TABLE healthcare_resources RENAME COLUMN likes TO recommendations;');
+        const info = db.prepare('UPDATE healthcare_resources SET recommendations = COALESCE(recommendations, 0) + 1 WHERE id = ?').run(id);
+        if (info.changes === 0) return null;
+        return db.prepare('SELECT * FROM healthcare_resources WHERE id = ?').get(id);
+      } catch (e) {
+        throw e;
+      }
+    }
+    throw err;
+  }
 }

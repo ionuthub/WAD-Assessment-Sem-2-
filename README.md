@@ -24,8 +24,8 @@ This section outlines the step-by-step process of refactoring and improving the 
 
 -   **Problem**: The initial codebase used the term "recommend" for liking a resource, which was inconsistent with the project requirements. The first task was to standardize this to "like" across the entire application.
 -   **Process**:
-    1.  **Backend**: The database schema, DAO functions (`incrementLikes`), and API routes were updated to use `likes` instead of `recommends`.
-    2.  **Frontend**: The React components (`MapView.jsx`) were modified to call the new `/like` endpoint and display "Likes" instead of "Recommends."
+    1.  **Backend**: The database schema, DAO functions (`incrementRecommendations`), and API routes were updated to use `recommendations` instead of `recommends`/`likes`.
+    2.  **Frontend**: The React components (`MapView.jsx`) were modified to call the new `/recommend` endpoint and display "Recommendations" instead of "Recommends"/"Likes."
 -   **Thought Process**: This initial step was crucial for establishing a consistent domain language, which makes the code easier to understand and maintain.
 
 ### Phase 2: Securing the Application
