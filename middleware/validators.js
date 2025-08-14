@@ -1,7 +1,7 @@
 // Centralised validation middleware using express-validator
 // Provides reusable validators for various routes
 
-import { body, param, validationResult } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 
 export const createResourceValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),

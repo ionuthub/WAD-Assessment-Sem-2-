@@ -4,8 +4,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "prestart": "kill $(lsof -t -i:3001) || true",
-    "start": "nodemon server.js",
+    "prestart": "kill $(lsof -t -i:3000) || true",
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -21,8 +21,5 @@
     "express-session": "^1.18.1",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }

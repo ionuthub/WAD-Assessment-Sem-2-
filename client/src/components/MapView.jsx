@@ -16,8 +16,6 @@ export default function MapView({ user }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const [newReview, setNewReview] = useState('');
-
   const fetchResources = () => {
     const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
     fetch(url)
@@ -51,7 +49,6 @@ export default function MapView({ user }) {
       body: JSON.stringify({ resource_id, review })
     });
     if (res.ok) {
-      setNewReview('');
       fetchResources();
     } else {
       const errorData = await res.json();
@@ -117,7 +114,7 @@ export default function MapView({ user }) {
               <div key={r.id} className="resource-card" onClick={() => setRegion(r.region)}>
                 <strong>{r.name}</strong> <span className="category">{r.category}</span>
                 <p className="desc">{r.description}</p>
-                <p className="recommends">Likes: {r.likes}</p>
+                <p>Likes: {r.likes}</p>
                 <button className="recommend-btn" onClick={() => handleLike(r.id)}>Like</button>
                 {r.reviews && r.reviews.length > 0 && (
                   <ul className="reviews-list" style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>

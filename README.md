@@ -55,12 +55,12 @@ This section outlines the step-by-step process of refactoring and improving the 
 
 ### Phase 5: Server & Environment Configuration
 
--   **Problem**: The backend and frontend development servers were both trying to run on the same port (`3000`), causing conflicts. Additionally, the backend server was prone to crashing without cleanly restarting, leading to `EADDRINUSE` (address already in use) errors.
+-   **Problem**: The application needed to run on port `3000` for final submission, and the backend server was prone to crashing without cleanly restarting, leading to `EADDRINUSE` (address already in use) errors.
 -   **Process**:
-    1.  **Port Separation**: The backend server was moved to port `3001`, while the Vite development server was configured to run on port `3000`.
-    2.  **API Proxy**: Vite's proxy was configured to forward any requests to `/api` from the frontend to the backend server on port `3001`. This allows the frontend to make API calls to the same origin, avoiding CORS issues during development.
-    3.  **`prestart` Script**: To solve the `EADDRINUSE` error, a `prestart` script was added to `package.json`. This script automatically finds and kills any process using port `3001` before the server starts, ensuring a clean slate for every run.
--   **Thought Process**: A clean separation of frontend and backend environments is standard practice in modern web development. The `prestart` script was a pragmatic solution to a recurring development environment issue, improving the developer experience.
+    1.  **Production Port**: The backend server was configured to run on port `3000` to meet submission requirements.
+    2.  **`prestart` Script**: To solve the `EADDRINUSE` error, a `prestart` script was added to `package.json`. This script automatically finds and kills any process using port `3000` before the server starts, ensuring a clean slate for every run.
+    3.  **Development Environment**: To avoid port conflicts during development, the Vite dev server was configured to run on port `5173` and proxy API requests to the backend on port `3000`.
+-   **Thought Process**: This setup ensures the application meets the specific port requirements for production while maintaining a smooth and conflict-free workflow for development.
 
 ---
 
@@ -73,24 +73,24 @@ This section outlines the step-by-step process of refactoring and improving the 
 
 ### Development Mode
 
-This is the recommended way to run the application for development.
+This is the recommended way to run the application for development, allowing for hot-reloading on both the frontend and backend.
 
 1.  **Start the Backend Server**:
 
     ```bash
-    # From the project root
+    # From the project root, this will run on http://localhost:3000
     npm start
     ```
 
 2.  **Start the Frontend Dev Server**:
 
     ```bash
-    # From the project root
+    # In a new terminal, from the project root
     cd client
     npm run dev
     ```
 
-3.  Open your browser and navigate to `http://localhost:3000`.
+3.  Open your browser and navigate to `http://localhost:5173`.
 
 ### Production Mode
 
@@ -119,4 +119,4 @@ To run the application as it would be deployed:
     npm start
     ```
 
-The application will be served from `http://localhost:3001`.
+The application will be served from `http://localhost:3000`.

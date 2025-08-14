@@ -12,9 +12,6 @@ export function list(req, res, next) {
 export function create(req, res, next) {
   try {
     const { name, category, country, description, region, lat, lon } = req.body;
-    if (!name || !category || !country || !description || !region || lat == null || lon == null) {
-      return res.status(400).json({ error: 'All fields required' });
-    }
     const resource = resourcesDao.create({ name, category, country, description, region, lat, lon });
     res.status(201).json(resource);
   } catch (err) {

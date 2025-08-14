@@ -10,10 +10,6 @@ export function resourceExists(id) {
   return !!db.prepare('SELECT 1 FROM healthcare_resources WHERE id = ?').get(id);
 }
 
-export function list(resourceId) {
-  return db.prepare('SELECT review FROM reviews WHERE resource_id = ? ORDER BY id DESC').all(resourceId);
-}
-
 export function hasUserReviewed(resource_id, userId) {
   const stmt = db.prepare('SELECT 1 FROM reviews WHERE resource_id = ? AND user_id = ?');
   return !!stmt.get(resource_id, userId);

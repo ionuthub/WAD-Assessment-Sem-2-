@@ -6,12 +6,10 @@ import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import db from './db/db.js';
 import resourcesRouter from './routes/resources.js';
 import usersRouter from './routes/users.js';
 import reviewsRouter from './routes/reviews.js';
 import errorHandler from './middleware/errorHandler.js';
-import authMiddleware from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,10 +54,6 @@ app.use('/api/reviews', reviewsRouter);
 // Global error handler
 app.use(errorHandler);
 
-// Static files
-const publicDir = path.join(__dirname, 'public');
-app.use(express.static(publicDir));
-
 // React build static
 const clientDist = path.join(__dirname, 'client', 'dist');
 app.use(express.static(clientDist));
@@ -69,7 +63,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`DiscoverHealth server listening on port ${PORT}`);
 });
