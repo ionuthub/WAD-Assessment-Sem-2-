@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function AuthBar({ user, setUser }) {
   const [form, setForm] = useState({ username: '', password: '' });
   const [signup, setSignup] = useState(false);
   const [msg, setMsg] = useState('');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    fetch('/api/users/me', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => setUser(data.user))
+      .catch(() => setUser(null));
+  }, [setUser]);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,7 +23,8 @@ export default function AuthBar({ user, setUser }) {
     const res = await fetch(`/api/users/${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify(form),
+      credentials: 'include'
     });
     if (res.ok) {
       const data = await res.json();
@@ -29,7 +38,7 @@ export default function AuthBar({ user, setUser }) {
   };
 
   const logout = async () => {
-    await fetch('/api/users/logout', { method: 'POST' });
+    await fetch('/api/users/logout', { method: 'POST', credentials: 'include' });
     setUser(null);
   };
 

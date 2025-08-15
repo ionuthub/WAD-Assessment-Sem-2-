@@ -120,3 +120,76 @@ To run the application as it would be deployed:
     ```
 
 The application will be served from `http://localhost:3000`.
+
+### Database: Initialize and Seed
+
+Run these once on a fresh clone or when resetting the DB (uses `better-sqlite3` with file `discoverhealth.db` at the repo root).
+
+```bash
+# From the project root
+node scripts/init-db.js
+node scripts/seed.js
+```
+
+Notes:
+
+- The seed script safely renames an old column `likes` to `recommendations` if present.
+- To reset the database, delete the file and re-run init + seed:
+
+  ```bash
+  rm -f discoverhealth.db
+  node scripts/init-db.js
+  node scripts/seed.js
+  ```
+
+### Proxy Details (Development)
+
+The Vite dev server proxies API calls from `http://localhost:5173` to the backend on `http://localhost:3000` for any path starting with `/api`.
+
+`client/vite.config.js`:
+
+```js
+export default defineConfig({
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': { target: 'http://localhost:3000', changeOrigin: true }
+    }
+  }
+})
+```
+
+Usage in the frontend: prefer relative URLs like `fetch('/api/resources')` so the proxy handles requests in dev and the same path works in production.
+
+### Environment Notes
+
+- __PORT__: Server listens on `process.env.PORT || 3000`. For this project, `3000` is the expected port. If you change it, also update:
+  - `client/vite.config.js` proxy target.
+  - `server.js` CORS origin (`http://localhost:3000`).
+  - `package.json` `prestart` script (currently kills processes on port `3000`).
+- __SESSION_SECRET__: Set for session signing (recommended). Example (macOS/Linux):
+
+  ```bash
+  export SESSION_SECRET="change-me"
+  ```
+
+- __NODE_ENV__: When set to `production`, session cookies are marked `secure` and the server serves the built frontend from `client/dist`.
+- __Database file__: `db/db.js` points to `../discoverhealth.db`. Ensure the repo directory is writable so SQLite can create/update the file.
+
+### Quickstart (Fresh Clone)
+
+```bash
+# 1) Install dependencies
+npm install
+cd client && npm install && cd ..
+
+# 2) Initialize + seed the database
+node scripts/init-db.js
+node scripts/seed.js
+
+# 3) Run backend (terminal A)
+npm start
+
+# 4) Run frontend dev server (terminal B)
+cd client && npm run dev
+```

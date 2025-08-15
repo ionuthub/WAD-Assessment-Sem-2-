@@ -2,6 +2,7 @@
 // Run once via: node scripts/seed.js
 
 import db from '../db/db.js';
+import bcrypt from 'bcryptjs';
 
 console.log('Seeding database...');
 
@@ -19,10 +20,10 @@ try {
 db.exec(`
   PRAGMA foreign_keys = ON;
 
-  -- USERS (simple demo passwords, not hashed)
+  -- USERS (simple demo passwords, hashed)
   INSERT OR IGNORE INTO users (username, password, isAdmin) VALUES
-    ('jsmith', 'demo', 0),
-    ('admin',  'demo', 1);
+    ('jsmith', '${bcrypt.hashSync('demo', 10)}', 0),
+    ('admin',  '${bcrypt.hashSync('demo', 10)}', 1);
 
   -- HEALTHCARE RESOURCES
   INSERT OR IGNORE INTO healthcare_resources

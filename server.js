@@ -46,6 +46,12 @@ app.use(session({
   }
 }));
 
+// CORS configuration for credentials
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
 // API routes
 app.use('/api/resources', resourcesRouter);
 app.use('/api/users', usersRouter);
