@@ -34,4 +34,5 @@ Remove-Item -Force .\discoverhealth.db
 node scripts/init-db.js
 node scripts/seed.js
 
-note: there is no discoverhealth.db file included in this project zip. the assessor should run the init-db and seed steps above to create it. do not expect the db file to be present.
+note about database
+a discoverhealth.db file will appear after you run init-db and seed. you may also find one included in this project zip. the assessor can either use the included db file directly or run the init-db and seed steps to recreate a fresh one. both options will work with the code.
