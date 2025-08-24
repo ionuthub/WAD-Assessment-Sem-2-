@@ -56,5 +56,35 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_reviews_resource ON reviews(resource_id);
 `);
 
+// Triggers to enforce review quality and non-null user_id at DB layer
+db.exec(`
+  DROP TRIGGER IF EXISTS trg_reviews_validate_insert;
+  DROP TRIGGER IF EXISTS trg_reviews_validate_update;
+
+  CREATE TRIGGER trg_reviews_validate_insert
+  BEFORE INSERT ON reviews
+  FOR EACH ROW
+  BEGIN
+    SELECT
+      CASE
+        WHEN NEW.user_id IS NULL THEN RAISE(ABORT, 'user_id required')
+        WHEN length(trim(NEW.review)) < 1 THEN RAISE(ABORT, 'Review must be 1–500 chars')
+        WHEN length(trim(NEW.review)) > 500 THEN RAISE(ABORT, 'Review must be 1–500 chars')
+      END;
+  END;
+
+  CREATE TRIGGER trg_reviews_validate_update
+  BEFORE UPDATE ON reviews
+  FOR EACH ROW
+  BEGIN
+    SELECT
+      CASE
+        WHEN NEW.user_id IS NULL THEN RAISE(ABORT, 'user_id required')
+        WHEN length(trim(NEW.review)) < 1 THEN RAISE(ABORT, 'Review must be 1–500 chars')
+        WHEN length(trim(NEW.review)) > 500 THEN RAISE(ABORT, 'Review must be 1–500 chars')
+      END;
+  END;
+`);
+
 console.log('Database schema initialized successfully.');
 process.exit();

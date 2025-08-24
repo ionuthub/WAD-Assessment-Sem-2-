@@ -14,13 +14,19 @@ export default function MapView({ user }) {
   const [resources, setResources] = useState([]);
   const [region, setRegion] = useState('');
   const [error, setError] = useState(null);
+  const [pendingRecommend, setPendingRecommend] = useState({});
+  const [actionError, setActionError] = useState({});
   const navigate = useNavigate();
 
   const fetchResources = () => {
     const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
     fetch(url)
       .then(r => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then(setResources)
+      .then(data => {
+        setResources(data);
+        setActionError({});
+        setPendingRecommend({});
+      })
       .catch(setError);
   };
 
@@ -29,35 +35,43 @@ export default function MapView({ user }) {
   }, [region]);
 
   function handleRecommend(id) {
+    setPendingRecommend(prev => ({ ...prev, [id]: true }));
     fetch(`/api/resources/${id}/recommend`, { method: 'POST', credentials: 'include' })
       .then(async r => {
         if (!r.ok) {
           if (r.status === 401) {
-            setError('Please log in to recommend');
+            setActionError(prev => ({ ...prev, [id]: 'Please log in to recommend' }));
             return Promise.reject('unauthorized');
           }
           if (r.status === 400) {
             const data = await r.json().catch(() => ({}));
-            setError(data.error || 'Bad request');
+            setActionError(prev => ({ ...prev, [id]: data.error || 'Bad request' }));
             return Promise.reject('bad request');
           }
           if (r.status === 404) {
-            setError('Resource not found');
+            setActionError(prev => ({ ...prev, [id]: 'Resource not found' }));
             return Promise.reject('not found');
           }
-          throw new Error('Error recommending resource');
+          setActionError(prev => ({ ...prev, [id]: 'Error recommending resource' }));
+          return Promise.reject('error');
         }
         const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
         return fetch(url);
       })
       .then(r => (r.ok ? r.json() : Promise.reject('Failed to refresh')))
-      .then(setResources)
-      .catch(console.error);
+      .then(data => {
+        setResources(data);
+        setActionError(prev => ({ ...prev, [id]: null }));
+      })
+      .catch(console.error)
+      .finally(() => setPendingRecommend(prev => ({ ...prev, [id]: false })));
   }
 
   
 
   const submitReview = async (resource_id, review) => {
+    setError(null);
+    setActionError(prev => ({ ...prev, [resource_id]: null }));
     const res = await fetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,9 +81,14 @@ export default function MapView({ user }) {
     if (res.ok) {
       fetchResources();
     } else {
-      const errorData = await res.json();
-      if (res.status === 401) setError('Please log in to add a review');
-      else setError(errorData.error || 'Failed to submit review');
+      let msg = 'Failed to submit review';
+      try {
+        const errorData = await res.json();
+        if (errorData?.error) msg = errorData.error;
+        if (errorData?.errors?.length) msg = errorData.errors[0].msg || msg;
+      } catch {}
+      if (res.status === 401) msg = 'Please log in to add a review';
+      setActionError(prev => ({ ...prev, [resource_id]: msg }));
     }
   };
 
@@ -110,17 +129,22 @@ export default function MapView({ user }) {
                   <p>{r.region}, {r.country}</p>
                   <p>Recommendations: {r.recommendations}</p>
                   {user ? (
-                    <button onClick={() => handleRecommend(r.id)}>Recommend</button>
+                    <button onClick={() => handleRecommend(r.id)} disabled={!!pendingRecommend[r.id]}>
+                      {pendingRecommend[r.id] ? 'Recommending…' : 'Recommend'}
+                    </button>
                   ) : (
                     <button disabled title="Log in to recommend">Recommend</button>
                   )}
                   {user ? (
                     <form onSubmit={e => handleReview(e, r.id)} style={{ marginTop: '0.5rem' }}>
-                      <input name="review" placeholder="Write review" />{' '}
+                      <input name="review" placeholder="Write review" maxLength={500} />{' '}
                       <button type="submit">Add</button>
                     </form>
                   ) : (
                     <div style={{ marginTop: '0.5rem', color: '#666' }}>Log in to add a review</div>
+                  )}
+                  {actionError[r.id] && (
+                    <div style={{ color: '#b00020', marginTop: '0.25rem' }}>{actionError[r.id]}</div>
                   )}
                     <ul style={{marginTop:'0.5rem', paddingLeft:'1rem'}}>
                       {r.reviews.map((rv, i) => (
@@ -145,7 +169,9 @@ export default function MapView({ user }) {
                 <p className="desc">{r.description}</p>
                 <p>Recommendations: {r.recommendations}</p>
                 {user ? (
-                  <button className="recommend-btn" onClick={() => handleRecommend(r.id)}>Recommend</button>
+                  <button className="recommend-btn" onClick={() => handleRecommend(r.id)} disabled={!!pendingRecommend[r.id]}>
+                    {pendingRecommend[r.id] ? 'Recommending…' : 'Recommend'}
+                  </button>
                 ) : (
                   <button className="recommend-btn" disabled title="Log in to recommend">Recommend</button>
                 )}
@@ -164,4 +190,3 @@ export default function MapView({ user }) {
     </div>
   );
 }
-

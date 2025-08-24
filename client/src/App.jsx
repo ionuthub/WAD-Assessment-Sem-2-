@@ -11,17 +11,19 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch('/api/users/me', { credentials: 'include' })
-      .then(async r => {
-        if (r.status === 401 || r.status === 204) {
-          setUser(null);
-          return null;
-        }
+    const ac = new AbortController();
+    (async () => {
+      try {
+        const r = await fetch('/api/users/me', { credentials: 'include', signal: ac.signal });
+        if (r.status === 401 || r.status === 204) { setUser(null); return; }
+        if (!r.ok) { setUser(null); return; }
         const data = await r.json().catch(() => null);
-        if (data && data.user) setUser(data.user);
-        return null;
-      })
-      .catch(() => setUser(null));
+        setUser(data?.user ?? null);
+      } catch {
+        setUser(null);
+      }
+    })();
+    return () => ac.abort();
   }, []);
 
   return (
