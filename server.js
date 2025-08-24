@@ -15,9 +15,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
 app.use(
   helmet({
+    // For React + Leaflet we relax certain policies so map tiles and inline assets load properly.
+    // In production, tailor CSP/CORP to your asset hosts.
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false
@@ -36,7 +37,8 @@ app.use(
 
 app.use(express.json());
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'discover-health-secret',
+  // Use env var in production; 'dev-secret' fallback for local dev
+  secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {

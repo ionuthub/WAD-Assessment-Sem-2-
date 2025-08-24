@@ -9,8 +9,10 @@ export function signup(req, res, next) {
   try {
     const hashed = bcrypt.hashSync(password, 10);
     const user = usersDao.createUser(username, hashed);
-    req.session.user = user;
-    res.json({ message: 'Signed up', user });
+    // Store only minimal session data
+    req.session.user = { id: user.id, username: user.username };
+    // Respond without sensitive fields
+    res.json({ message: 'Signed up', user: req.session.user });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return res.status(400).json({ error: 'Username taken' });
@@ -37,6 +39,8 @@ export function me(req, res) {
   if (req.session.user) {
     res.json({ user: req.session.user });
   } else {
-    res.status(204).end();
+    // Return 401 so clients can clear stale user state
+    res.status(401).json({ error: 'Not authenticated' });
   }
 }
+

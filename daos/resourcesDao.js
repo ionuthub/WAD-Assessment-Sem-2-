@@ -10,6 +10,7 @@ export function getAll(region) {
         WHERE r.resource_id = hr.id
       ) as reviews_concat
     FROM healthcare_resources hr
+    ORDER BY COALESCE(hr.recommendations, 0) DESC, hr.name ASC
   `;
 
   const processResults = (resources) =>
@@ -27,7 +28,7 @@ export function getAll(region) {
     });
 
   if (region) {
-    const stmt = db.prepare(`${query} WHERE hr.region LIKE ? COLLATE NOCASE`);
+    const stmt = db.prepare(`${query.replace('ORDER BY COALESCE(hr.recommendations, 0) DESC, hr.name ASC', '')} WHERE hr.region LIKE ? COLLATE NOCASE ORDER BY COALESCE(hr.recommendations, 0) DESC, hr.name ASC`);
     const resources = stmt.all(`%${region}%`);
     return processResults(resources);
   }
@@ -39,7 +40,7 @@ export function getAll(region) {
 export function create(resource) {
   const { name, category, country, description, region, lat, lon } = resource;
   const stmt = db.prepare(`INSERT INTO healthcare_resources (name, category, country, description, region, lat, lon) VALUES (?, ?, ?, ?, ?, ?, ?)`);
-  const info = stmt.run(name, category, country, description, region, lat, lon);
+  const info = stmt.run(name, category, country, description, region, Number(lat), Number(lon));
   return db.prepare('SELECT * FROM healthcare_resources WHERE id = ?').get(info.lastInsertRowid);
 }
 
@@ -64,3 +65,4 @@ export function incrementRecommendations(id) {
     throw err;
   }
 }
+

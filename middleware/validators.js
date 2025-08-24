@@ -4,13 +4,13 @@
 import { body, validationResult } from 'express-validator';
 
 export const createResourceValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('category').trim().notEmpty().withMessage('Category is required'),
-  body('country').trim().optional(),
-  body('region').trim().notEmpty().withMessage('Region is required'),
-  body('description').trim().notEmpty().withMessage('Description is required'),
-  body('lat').isFloat({ min: -90, max: 90 }).withMessage('Latitude must be valid'),
-  body('lon').isFloat({ min: -180, max: 180 }).withMessage('Longitude must be valid'),
+  body('name').trim().isLength({ min: 2, max: 120 }).withMessage('Name must be 2–120 characters'),
+  body('description').trim().isLength({ min: 10, max: 1000 }).withMessage('Description must be 10–1000 characters'),
+  body('category').isIn(['Clinic','Dentist','Pharmacy','Support Group','Hospital','Wellness Center']).withMessage('Invalid category'),
+  body('region').trim().isLength({ min: 2, max: 80 }).withMessage('Region must be 2–80 characters'),
+  body('country').trim().isLength({ min: 2, max: 80 }).withMessage('Country must be 2–80 characters'),
+  body('lat').isFloat({ min: -90, max: 90 }).withMessage('Latitude out of range'),
+  body('lon').isFloat({ min: -180, max: 180 }).withMessage('Longitude out of range'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,8 +21,8 @@ export const createResourceValidation = [
 ];
 
 export const createReviewValidation = [
-  body('resource_id').isInt({ gt: 0 }).withMessage('resource_id must be a positive integer'),
-  body('review').trim().notEmpty().withMessage('review cannot be empty'),
+  body('resource_id').isInt({ min: 1 }).withMessage('Valid resource_id required'),
+  body('review').trim().isLength({ min: 1, max: 500 }).withMessage('Review must be 1–500 characters'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -31,3 +31,4 @@ export const createReviewValidation = [
     next();
   }
 ];
+

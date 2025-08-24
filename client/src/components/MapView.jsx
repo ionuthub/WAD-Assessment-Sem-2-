@@ -29,9 +29,24 @@ export default function MapView({ user }) {
   }, [region]);
 
   function handleRecommend(id) {
-    fetch(`/api/resources/${id}/recommend`, { method: 'POST' })
-      .then(r => {
-        if (!r.ok) throw new Error('Error recommending resource');
+    fetch(`/api/resources/${id}/recommend`, { method: 'POST', credentials: 'include' })
+      .then(async r => {
+        if (!r.ok) {
+          if (r.status === 401) {
+            setError('Please log in to recommend');
+            return Promise.reject('unauthorized');
+          }
+          if (r.status === 400) {
+            const data = await r.json().catch(() => ({}));
+            setError(data.error || 'Bad request');
+            return Promise.reject('bad request');
+          }
+          if (r.status === 404) {
+            setError('Resource not found');
+            return Promise.reject('not found');
+          }
+          throw new Error('Error recommending resource');
+        }
         const url = region ? `/api/resources?region=${encodeURIComponent(region)}` : '/api/resources';
         return fetch(url);
       })
@@ -46,13 +61,15 @@ export default function MapView({ user }) {
     const res = await fetch('/api/reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resource_id, review })
+      body: JSON.stringify({ resource_id, review }),
+      credentials: 'include'
     });
     if (res.ok) {
       fetchResources();
     } else {
       const errorData = await res.json();
-      setError(errorData.error || 'Failed to submit review');
+      if (res.status === 401) setError('Please log in to add a review');
+      else setError(errorData.error || 'Failed to submit review');
     }
   };
 
@@ -70,7 +87,11 @@ export default function MapView({ user }) {
       <div className="toolbar" style={{padding:'0.75rem'}}>
         Region: <input value={region} onChange={e => setRegion(e.target.value)} />{' '}
         <button onClick={() => setRegion(region.trim())}>Search</button>{' '}
-        {user && <button onClick={() => navigate('/add')}>Add Resource</button>}
+        {user ? (
+          <button onClick={() => navigate('/add')}>Add Resource</button>
+        ) : (
+          <button disabled title="Log in to add a resource">Add Resource</button>
+        )}
       </div>
       {user && <div className="login-status" style={{padding: '0 0.75rem 0.75rem'}}>Logged in as {user.username}</div>}
       <div className="main-content">
@@ -88,11 +109,19 @@ export default function MapView({ user }) {
                   <p>{r.description}</p>
                   <p>{r.region}, {r.country}</p>
                   <p>Recommendations: {r.recommendations}</p>
-                  <button onClick={() => handleRecommend(r.id)}>Recommend</button>
-                  <form onSubmit={e => handleReview(e, r.id)} style={{ marginTop: '0.5rem' }}>
-                    <input name="review" placeholder="Write review" />{' '}
-                    <button type="submit">Add</button>
-                  </form>
+                  {user ? (
+                    <button onClick={() => handleRecommend(r.id)}>Recommend</button>
+                  ) : (
+                    <button disabled title="Log in to recommend">Recommend</button>
+                  )}
+                  {user ? (
+                    <form onSubmit={e => handleReview(e, r.id)} style={{ marginTop: '0.5rem' }}>
+                      <input name="review" placeholder="Write review" />{' '}
+                      <button type="submit">Add</button>
+                    </form>
+                  ) : (
+                    <div style={{ marginTop: '0.5rem', color: '#666' }}>Log in to add a review</div>
+                  )}
                     <ul style={{marginTop:'0.5rem', paddingLeft:'1rem'}}>
                       {r.reviews.map((rv, i) => (
                         <li key={rv.id || i}>{rv.review}</li>
@@ -115,7 +144,11 @@ export default function MapView({ user }) {
                 <strong>{r.name}</strong> <span className="category">{r.category}</span>
                 <p className="desc">{r.description}</p>
                 <p>Recommendations: {r.recommendations}</p>
-                <button className="recommend-btn" onClick={() => handleRecommend(r.id)}>Recommend</button>
+                {user ? (
+                  <button className="recommend-btn" onClick={() => handleRecommend(r.id)}>Recommend</button>
+                ) : (
+                  <button className="recommend-btn" disabled title="Log in to recommend">Recommend</button>
+                )}
                 {r.reviews && r.reviews.length > 0 && (
                   <ul className="reviews-list" style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
                     {r.reviews.map((rv, i) => (
@@ -131,3 +164,4 @@ export default function MapView({ user }) {
     </div>
   );
 }
+

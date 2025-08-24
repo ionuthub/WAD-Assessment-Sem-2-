@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -27,8 +27,13 @@ export default function AddResource({ user }) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function onMapClick(e) {
-    setForm({ ...form, lat: e.latlng.lat, lon: e.latlng.lng });
+  function ClickToSet() {
+    useMapEvents({
+      click(e) {
+        setForm(f => ({ ...f, lat: e.latlng.lat, lon: e.latlng.lng }));
+      }
+    });
+    return null;
   }
 
   async function handleSubmit(e) {
@@ -39,6 +44,7 @@ export default function AddResource({ user }) {
       const res = await fetch('/api/resources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(form)
       });
       const data = await res.json();
@@ -72,16 +78,15 @@ export default function AddResource({ user }) {
       {success && <div style={{ background: '#e6ffea', color: '#007a1f', padding: '0.5rem', marginBottom: '0.5rem' }}>{success}</div>}
       <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 500, margin: 'auto' }}>
         <label>Name<br />
-          <input name="name" value={form.name} onChange={updateField} required />
+          <input name="name" value={form.name} onChange={updateField} required minLength={2} maxLength={120} />
           {errors.name && <span className="error-text">{errors.name}</span>}
         </label><br />
         <label>Description<br />
-          <textarea name="description" value={form.description} onChange={updateField} required />
+          <textarea name="description" value={form.description} onChange={updateField} required minLength={10} maxLength={1000} />
           {errors.description && <span className="error-text">{errors.description}</span>}
         </label><br />
         <label>Category<br />
           <select name="category" value={form.category} onChange={updateField} required>
-            {errors.category && <span className="error-text">{errors.category}</span>}
             <option value="">Select category</option>
             <option value="Clinic">Clinic</option>
             <option value="Dentist">Dentist</option>
@@ -90,9 +95,11 @@ export default function AddResource({ user }) {
             <option value="Hospital">Hospital</option>
             <option value="Wellness Center">Wellness Center</option>
           </select>
-        </label><br />
+        </label>
+        {errors.category && <span className="error-text">{errors.category}</span>}
+        <br />
         <label>Region<br />
-          <input name="region" value={form.region} onChange={updateField} />
+          <input name="region" value={form.region} onChange={updateField} required minLength={2} maxLength={80} />
           {errors.region && <span className="error-text">{errors.region}</span>}
         </label><br />
         <label>Country<br />
@@ -104,8 +111,9 @@ export default function AddResource({ user }) {
         <button type="submit" disabled={submitting}>{submitting ? 'Adding…' : 'Add Resource'}</button>
       </form>
       <div id="map" style={{ height: '300px', margin: '1rem auto', width: '90%', maxWidth: '600px' }}>
-        <MapContainer center={[form.lat, form.lon]} zoom={5} style={{ height: '100%', width: '100%' }} onclick={onMapClick}>
+        <MapContainer center={[form.lat, form.lon]} zoom={5} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <ClickToSet />
           <Marker position={[form.lat, form.lon]} draggable={true} eventHandlers={{ dragend: (e) => {
             const latlng = e.target.getLatLng();
             setForm({ ...form, lat: latlng.lat, lon: latlng.lng });

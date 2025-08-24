@@ -11,12 +11,17 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch('/api/users/me')
-      .then(r => (r.status === 204 ? null : r.json()))
-      .then(data => {
+    fetch('/api/users/me', { credentials: 'include' })
+      .then(async r => {
+        if (r.status === 401 || r.status === 204) {
+          setUser(null);
+          return null;
+        }
+        const data = await r.json().catch(() => null);
         if (data && data.user) setUser(data.user);
+        return null;
       })
-      .catch(() => {});
+      .catch(() => setUser(null));
   }, []);
 
   return (

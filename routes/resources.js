@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.get('/', resourcesController.list);
 router.post('/', requireAuth, createResourceValidation, resourcesController.create);
-router.post('/:id/recommend', resourcesController.recommend);
+router.post('/:id/recommend', requireAuth, resourcesController.recommend);
 
 export default router;

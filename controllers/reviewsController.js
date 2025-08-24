@@ -13,8 +13,15 @@ export function create(req, res, next) {
       return res.status(404).json({ error: 'Resource not found' });
     }
 
-    const newReview = reviewsDao.create(resource_id, userId, review.trim());
-    res.status(201).json(newReview);
+    try {
+      const newReview = reviewsDao.create(resource_id, userId, review.trim());
+      res.status(201).json(newReview);
+    } catch (err) {
+      if (String(err.code).includes('SQLITE_CONSTRAINT')) {
+        return res.status(409).json({ error: 'You have already reviewed this resource.' });
+      }
+      throw err;
+    }
   } catch (err) {
     next(err);
   }

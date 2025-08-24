@@ -3,7 +3,10 @@ import db from '../db/db.js';
 
 console.log('Initializing database schema...');
 
+// Base tables (create if not exists)
 db.exec(`
+  PRAGMA foreign_keys = ON;
+
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -26,9 +29,31 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS reviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     resource_id INTEGER NOT NULL,
+    user_id INTEGER,
     review TEXT NOT NULL,
-    FOREIGN KEY (resource_id) REFERENCES healthcare_resources(id) ON DELETE CASCADE
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (resource_id) REFERENCES healthcare_resources(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+`);
+
+// Migration: add columns to existing reviews table if missing
+const cols = db.prepare('PRAGMA table_info(reviews)').all();
+const hasUserId = cols.some(c => c.name === 'user_id');
+const hasCreatedAt = cols.some(c => c.name === 'created_at');
+
+if (!hasUserId) {
+  db.exec(`ALTER TABLE reviews ADD COLUMN user_id INTEGER;`);
+}
+if (!hasCreatedAt) {
+  db.exec(`ALTER TABLE reviews ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;`);
+}
+
+// Indexes (safe to run repeatedly)
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_unique ON reviews(resource_id, user_id);
+  CREATE INDEX IF NOT EXISTS idx_resources_region ON healthcare_resources(region);
+  CREATE INDEX IF NOT EXISTS idx_reviews_resource ON reviews(resource_id);
 `);
 
 console.log('Database schema initialized successfully.');
