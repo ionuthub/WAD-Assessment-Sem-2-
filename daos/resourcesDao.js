@@ -1,48 +1,41 @@
 import db from '../db/db.js';
 
 export function getAll(region) {
-  const base = `
+  let sql = `
     SELECT
       hr.*,
-      (
-        SELECT GROUP_CONCAT(r.review, '|||')
-        FROM (
-          SELECT r.review
-          FROM reviews r
-          WHERE r.resource_id = hr.id
-          ORDER BY r.created_at DESC
-        )
-      ) AS reviews_concat,
-      (SELECT COUNT(*) FROM reviews r2 WHERE r2.resource_id = hr.id) AS review_count
+      -- Concatenate reviews via a correlated subquery (no table alias needed)
+      (SELECT GROUP_CONCAT(review, '|||')
+         FROM reviews
+        WHERE resource_id = hr.id)           AS reviews_concat,
+      -- Count reviews via a correlated subquery
+      (SELECT COUNT(*)
+         FROM reviews
+        WHERE resource_id = hr.id)           AS review_count
     FROM healthcare_resources hr
   `;
-  const orderClause = ' ORDER BY COALESCE(hr.recommendations, 0) DESC, hr.name ASC';
   const params = [];
-  let sql = base;
-
   if (region) {
-    sql += ' WHERE hr.region LIKE ? COLLATE NOCASE';
+    sql += ` WHERE hr.region LIKE ? COLLATE NOCASE `;
     params.push(`%${region}%`);
   }
-  sql += orderClause;
+  sql += `
+    ORDER BY COALESCE(hr.recommendations, 0) DESC, hr.name ASC
+  `;
 
-  const stmt = db.prepare(sql);
-  const resources = stmt.all(...params);
-
-  const processResults = (rows) =>
-    rows.map(r => {
-      const rec = r.recommendations ?? r.likes ?? 0;
-      const { reviews_concat, ...rest } = r;
-      const out = {
-        ...rest,
-        recommendations: rec,
-        reviews: reviews_concat ? reviews_concat.split('|||').map(review => ({ review })) : []
-      };
-      if ('likes' in out) delete out.likes;
-      return out;
-    });
-
-  return processResults(resources);
+  const rows = db.prepare(sql).all(...params);
+  return rows.map((r) => {
+    const rec = r.recommendations ?? r.likes ?? 0;
+    const { reviews_concat, review_count, ...rest } = r;
+    const out = {
+      ...rest,
+      recommendations: rec,
+      review_count: Number(review_count || 0),
+      reviews: reviews_concat ? reviews_concat.split('|||').map((review) => ({ review })) : []
+    };
+    if ('likes' in out) delete out.likes;
+    return out;
+  });
 }
 
 export function create(resource) {
