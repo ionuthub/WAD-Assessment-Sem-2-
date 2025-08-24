@@ -3,10 +3,11 @@ import db from '../db/db.js';
 
 console.log('Initializing database schema...');
 
+// Ensure FK enforcement
+db.exec(`PRAGMA foreign_keys = ON;`);
+
 // Base tables (create if not exists)
 db.exec(`
-  PRAGMA foreign_keys = ON;
-
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -37,20 +38,27 @@ db.exec(`
   );
 `);
 
-// Migration: add columns to existing reviews table if missing
-const cols = db.prepare('PRAGMA table_info(reviews)').all();
-const hasUserId = cols.some(c => c.name === 'user_id');
-const hasCreatedAt = cols.some(c => c.name === 'created_at');
-
-if (!hasUserId) {
+// Backfill columns if older DB
+const reviewCols = db.prepare('PRAGMA table_info(reviews)').all().map(c => c.name);
+if (!reviewCols.includes('user_id')) {
   db.exec(`ALTER TABLE reviews ADD COLUMN user_id INTEGER;`);
 }
-if (!hasCreatedAt) {
+if (!reviewCols.includes('created_at')) {
   db.exec(`ALTER TABLE reviews ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;`);
 }
 
-// Indexes (safe to run repeatedly)
+// Ensure recommendations column exists; migrate legacy 'likes' if present
+try {
+  db.exec(`ALTER TABLE healthcare_resources ADD COLUMN recommendations INTEGER DEFAULT 0;`);
+} catch (_) { /* ignore if exists */ }
+try {
+  db.exec(`ALTER TABLE healthcare_resources RENAME COLUMN likes TO recommendations;`);
+} catch (_) { /* ignore if likes doesn't exist */ }
+db.exec(`UPDATE healthcare_resources SET recommendations = COALESCE(recommendations, 0);`);
+
+// Indexes (idempotent)
 db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_unique ON reviews(resource_id, user_id);
   CREATE INDEX IF NOT EXISTS idx_resources_region ON healthcare_resources(region);
   CREATE INDEX IF NOT EXISTS idx_reviews_resource ON reviews(resource_id);
@@ -87,4 +95,3 @@ db.exec(`
 `);
 
 console.log('Database schema initialized successfully.');
-process.exit();
