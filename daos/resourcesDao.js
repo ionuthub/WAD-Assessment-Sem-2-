@@ -92,5 +92,3 @@ export function incrementRecommendations(id) {
     throw err;
   }
 }
-}
-

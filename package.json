@@ -5,8 +5,10 @@
   "main": "server.js",
   "scripts": {
     "prestart": "kill $(lsof -t -i:3000) || true",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "npm run build",
+    "test": "echo \"no tests\" && exit 0"
   },
   "keywords": [],
   "author": "",
@@ -21,5 +23,9 @@
     "express-session": "^1.18.1",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
   }
 }
